@@ -139,12 +139,12 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
     for (let chunk of batchChunks) {
         const batch = { images: chunk };
         await setTimeoutPromise(1000, null);
-        let uploadResult = trainer.createImagesFromFiles(sampleProject.id, batch)
+        let uploadResult = await trainer.createImagesFromFiles(sampleProject.id, batch)
         // await Promise.all(fileUploadPromises);
         if (uploadResult.status !== "OK") {
-            console.log(batch.images.map(i=>{
+            batch.images.map(i=>{
                 console.log(i.regions)
-            }))
+            })
         }
         console.log(uploadResult)
     }
