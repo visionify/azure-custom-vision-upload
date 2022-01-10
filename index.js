@@ -99,7 +99,7 @@ async function main({ deletePreviousProject, createNewProject, prevProjectId, ta
 async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag, sampleProject) {
     let filesArray = fs.readdirSync(sampleDataRoot).filter(file => fs.lstatSync(sampleDataRoot + file).isFile())
     filesArray = filesArray.filter(a => a.split('.')[1] === 'jpg')
-    let fileUploadPromises = [];
+    // let fileUploadPromises = [];
     let entries = []
     for (let file of filesArray) {
         file = file.split('.')[0]
@@ -139,12 +139,15 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
     for (let chunk of batchChunks) {
         const batch = { images: chunk };
         await setTimeoutPromise(1000, null);
-        fileUploadPromises.push(trainer.createImagesFromFiles(sampleProject.id, batch));
+        let uploadResult = trainer.createImagesFromFiles(sampleProject.id, batch)
+        // await Promise.all(fileUploadPromises);
+        if (uploadResult[0].status !== "OK") {
+            console.log(batch.images.map(i=>{
+                console.log(i.regions)
+            }))
+        }
+        console.log(uploadResult[0])
     }
-
-
-    let uploadResult = await Promise.all(fileUploadPromises);
-    console.log(uploadResult[0])
     console.log('Completed upload of all iamges from :: ', sampleDataRoot)
 }
 
@@ -156,7 +159,6 @@ function splitToBulks(arr, bulkSize = 20) {
     return bulks;
 }
 
-
 main({
     // deletePreviousProject: false,
     prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
@@ -167,7 +169,6 @@ main({
 })
 
 //rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
-
 
 
 
