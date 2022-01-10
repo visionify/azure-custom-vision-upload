@@ -135,12 +135,25 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
         }
         entries.push(entry)
     }
-    const batch = { images: entries };
-    await setTimeoutPromise(1000, null);
-    fileUploadPromises.push(trainer.createImagesFromFiles(sampleProject.id, batch));
+    let batchChunks = splitToBulks(entries, 64)
+    for (let chunk of batchChunks) {
+        const batch = { images: chunk };
+        await setTimeoutPromise(1000, null);
+        fileUploadPromises.push(trainer.createImagesFromFiles(sampleProject.id, batch));
+    }
+
+
     let uploadResult = await Promise.all(fileUploadPromises);
     console.log(uploadResult[0])
     console.log('Completed upload of all iamges from :: ', sampleDataRoot)
+}
+
+function splitToBulks(arr, bulkSize = 20) {
+    const bulks = [];
+    for (let i = 0; i < Math.ceil(arr.length / bulkSize); i++) {
+        bulks.push(arr.slice(i * bulkSize, (i + 1) * bulkSize));
+    }
+    return bulks;
 }
 
 
