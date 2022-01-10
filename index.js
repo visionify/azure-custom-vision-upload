@@ -5,7 +5,7 @@ const PredictionApi = require("@azure/cognitiveservices-customvision-prediction"
 const msRest = require("@azure/ms-rest-js");
 var xml2json = require('xml2js');
 var parser = new xml2json.Parser();
-const { promises: { readdir } } = require('fs')
+const readdir = fs.promises.readdir
 const setTimeoutPromise = util.promisify(setTimeout);
 
 let cs_training_key = "24ddfbfed63f4d97abc89a88c3d0798a"
