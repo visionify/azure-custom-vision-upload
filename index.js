@@ -5,6 +5,7 @@ const PredictionApi = require("@azure/cognitiveservices-customvision-prediction"
 const msRest = require("@azure/ms-rest-js");
 var xml2json = require('xml2js');
 var parser = new xml2json.Parser();
+// const { promises: { readdir } } = require('fs')
 const readdir = fs.promises.readdir
 const setTimeoutPromise = util.promisify(setTimeout);
 
@@ -18,9 +19,8 @@ const trainingKey = my_training_key;
 const trainingEndpoint = my_training_endpoint;
 const predictionKey = "24ddfbfed63f4d97abc89a88c3d0798a"; //
 const predictionResourceId = "/subscriptions/14ef0c4c-a76e-442f-bfa9-d986d43b5f25/resourceGroups/ml-training/providers/Microsoft.CognitiveServices/accounts/mltrainingtest-Prediction";
-const predictionEndpoint = "https://mltrainingtest-prediction.cognitiveservices.azure.com/"; //
-let baseFolder = rootFolder
-const trainingProjectName = 'Shelf Detection'
+const predictionEndpoint = "https://mltrainingtest-prediction.cognitiveservices.azure.com/"; 
+const trainingProjectName = 'Shelf Detection - Gen1'
 const publishIterationName = "detectModel";
 
 const credentials = new msRest.ApiKeyCredentials({ inHeader: { "Training-key": trainingKey } });
@@ -129,9 +129,9 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
 
 main({
     deletePreviousProject: true,
-    prevProjectId: null,
-    rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_alcohol',
-    tagName: 'Alcohol'
+    prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
+    rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
+    tagName: 'Dairymeat'
 })
 
 
