@@ -15,8 +15,8 @@ let my_training_key = "843152cfc1eb45e9aeac3308398b9b67"
 let my_training_endpoint = "https://mltrainingtest.cognitiveservices.azure.com/"
 
 //CONFIGURATIONS : Update these values
-const trainingKey = cs_training_key;
-const trainingEndpoint = cs_training_endpoint;
+const trainingKey = my_training_key;
+const trainingEndpoint = my_training_endpoint;
 const predictionKey = "24ddfbfed63f4d97abc89a88c3d0798a"; //
 const predictionResourceId = "/subscriptions/14ef0c4c-a76e-442f-bfa9-d986d43b5f25/resourceGroups/ml-training/providers/Microsoft.CognitiveServices/accounts/mltrainingtest-Prediction";
 const predictionEndpoint = "https://mltrainingtest-prediction.cognitiveservices.azure.com/";
@@ -53,17 +53,30 @@ async function main({ deletePreviousProject, createNewProject, prevProjectId, ta
         try {
             sampleProject = await trainer.getProject(prevProjectId)
         } catch (e) {
+            console.log(e)
             throw new Error('Could not find the project. If you dont have a project ID. you can delete previous projects and create a new one')
         }
     }
+
+
     const baseFolder = rootFolder
+
+
+    // Get tag if exists or create a new tag
     console.log("Sample project ID: " + sampleProject.id);
-    const customTag = await trainer.createTag(sampleProject.id, tagName);
+    let customTag
+    const customTags = await trainer.getTags(prevProjectId)
+    customTag = customTags.find(t => t.name == tagName)
+    if (customTag) {
+        customTag = await trainer.getTag(prevProjectId, customTag.id)
+    } else {
+        customTag = await trainer.createTag(sampleProject.id, tagName);
+    }
+
+
     let folders = (await readdir(baseFolder, { withFileTypes: true }))
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name)
-
-    console.log(folders)
 
     for (let folder of folders) {
         let tempAddress = `${baseFolder}/${folder}`
@@ -133,12 +146,15 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
 
 main({
     // deletePreviousProject: false,
-    // prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
+    prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
     // deletePreviousProject: true,
     rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
-    createNewProject: true,
+    // createNewProject: true,
     tagName: 'Dairymeat'
 })
+
+
+
 
 
 // to unzip everything recursively inside a fodler ---->  find . -iname '*.zip' -exec sh -c 'unzip -o -d "${0%.*}" "$0"' '{}' ';'
