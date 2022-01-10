@@ -141,12 +141,12 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
         await setTimeoutPromise(1000, null);
         let uploadResult = trainer.createImagesFromFiles(sampleProject.id, batch)
         // await Promise.all(fileUploadPromises);
-        if (uploadResult[0].status !== "OK") {
+        if (uploadResult.status !== "OK") {
             console.log(batch.images.map(i=>{
                 console.log(i.regions)
             }))
         }
-        console.log(uploadResult[0])
+        console.log(uploadResult)
     }
     console.log('Completed upload of all iamges from :: ', sampleDataRoot)
 }
