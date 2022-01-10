@@ -15,8 +15,8 @@ let my_training_key = "843152cfc1eb45e9aeac3308398b9b67"
 let my_training_endpoint = "https://mltrainingtest.cognitiveservices.azure.com/"
 
 //CONFIGURATIONS : Update these values
-const trainingKey = my_training_key;
-const trainingEndpoint = my_training_endpoint;
+const trainingKey = cs_training_key;
+const trainingEndpoint = cs_training_endpoint;
 const predictionKey = "24ddfbfed63f4d97abc89a88c3d0798a"; //
 const predictionResourceId = "/subscriptions/14ef0c4c-a76e-442f-bfa9-d986d43b5f25/resourceGroups/ml-training/providers/Microsoft.CognitiveServices/accounts/mltrainingtest-Prediction";
 const predictionEndpoint = "https://mltrainingtest-prediction.cognitiveservices.azure.com/"; 
@@ -128,8 +128,9 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
 
 
 main({
-    deletePreviousProject: false,
-    prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
+    // deletePreviousProject: false,
+    // prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
+    deletePreviousProject: true,
     rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
     tagName: 'Dairymeat'
 })
