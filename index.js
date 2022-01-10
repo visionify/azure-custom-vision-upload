@@ -128,7 +128,7 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
 
 
 main({
-    deletePreviousProject: true,
+    deletePreviousProject: false,
     prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
     rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
     tagName: 'Dairymeat'
