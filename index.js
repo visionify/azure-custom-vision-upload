@@ -29,7 +29,7 @@ const predictor_credentials = new msRest.ApiKeyCredentials({ inHeader: { "Predic
 const predictor = new PredictionApi.PredictionAPIClient(predictor_credentials, predictionEndpoint);
 
 
-async function main({ deletePreviousProject, prevProjectId, tagName, rootFolder }) {
+async function main({ deletePreviousProject, createNewProject, prevProjectId, tagName, rootFolder }) {
     let sampleProject
     if (deletePreviousProject) {
         let projects = await trainer.getProjects()
@@ -136,7 +136,7 @@ main({
     // prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
     // deletePreviousProject: true,
     rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
-    createNewProject:true,
+    createNewProject: true,
     tagName: 'Dairymeat'
 })
 
