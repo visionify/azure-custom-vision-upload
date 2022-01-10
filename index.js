@@ -52,7 +52,7 @@ async function main({ deletePreviousProject, prevProjectId, tagName, rootFolder 
             throw new Error('Could not find the project. If you dont have a project ID. you can delete previous projects and create a new one')
         }
     }
-
+    const baseFolder = rootFolder
     console.log("Sample project ID: " + sampleProject.id);
     const customTag = await trainer.createTag(sampleProject.id, tagName);
     let folders = (await readdir(baseFolder, { withFileTypes: true }))
