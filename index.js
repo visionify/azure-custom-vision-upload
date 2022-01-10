@@ -19,7 +19,7 @@ const trainingKey = cs_training_key;
 const trainingEndpoint = cs_training_endpoint;
 const predictionKey = "24ddfbfed63f4d97abc89a88c3d0798a"; //
 const predictionResourceId = "/subscriptions/14ef0c4c-a76e-442f-bfa9-d986d43b5f25/resourceGroups/ml-training/providers/Microsoft.CognitiveServices/accounts/mltrainingtest-Prediction";
-const predictionEndpoint = "https://mltrainingtest-prediction.cognitiveservices.azure.com/"; 
+const predictionEndpoint = "https://mltrainingtest-prediction.cognitiveservices.azure.com/";
 const trainingProjectName = 'Shelf Detection - Gen1'
 const publishIterationName = "detectModel";
 
@@ -40,6 +40,10 @@ async function main({ deletePreviousProject, prevProjectId, tagName, rootFolder 
                 console.error('error while deleting prev projects :: ', e)
             }
         }
+
+    }
+
+    if (createNewProject) {
         console.log("Creating project...");
         const domains = await trainer.getDomains()
         console.log('________________________________________DOMAIN', domains)
@@ -130,8 +134,9 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
 main({
     // deletePreviousProject: false,
     // prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
-    deletePreviousProject: true,
+    // deletePreviousProject: true,
     rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
+    createNewProject:true,
     tagName: 'Dairymeat'
 })
 
