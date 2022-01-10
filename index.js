@@ -161,10 +161,13 @@ main({
     // deletePreviousProject: false,
     prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
     // deletePreviousProject: true,
-    rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
+    rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
     // createNewProject: true,
-    tagName: 'Dairymeat'
+    tagName: 'Frozenfood'
 })
+
+//rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
+
 
 
 
