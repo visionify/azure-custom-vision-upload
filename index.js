@@ -19,7 +19,7 @@ const trainingEndpoint = my_training_endpoint;
 const predictionKey = "24ddfbfed63f4d97abc89a88c3d0798a"; //
 const predictionResourceId = "/subscriptions/14ef0c4c-a76e-442f-bfa9-d986d43b5f25/resourceGroups/ml-training/providers/Microsoft.CognitiveServices/accounts/mltrainingtest-Prediction";
 const predictionEndpoint = "https://mltrainingtest-prediction.cognitiveservices.azure.com/"; //
-let baseFolder = "/home/abhian/work/testframework/data/shelf_training_B_2/"
+let baseFolder = rootFolder
 const trainingProjectName = 'Shelf Detection'
 const publishIterationName = "detectModel";
 
@@ -29,7 +29,8 @@ const predictor_credentials = new msRest.ApiKeyCredentials({ inHeader: { "Predic
 const predictor = new PredictionApi.PredictionAPIClient(predictor_credentials, predictionEndpoint);
 
 
-async function main({ deletePreviousProject }) {
+async function main({ deletePreviousProject, prevProjectId, tagName, rootFolder }) {
+    let sampleProject
     if (deletePreviousProject) {
         let projects = await trainer.getProjects()
         for (let project of projects) {
@@ -39,15 +40,21 @@ async function main({ deletePreviousProject }) {
                 console.error('error while deleting prev projects :: ', e)
             }
         }
+        console.log("Creating project...");
+        const domains = await trainer.getDomains()
+        console.log('________________________________________DOMAIN', domains)
+        const objDetectDomain = domains.find(domain => domain.type === "ObjectDetection")
+        sampleProject = await trainer.createProject(trainingProjectName, { domainId: objDetectDomain.id });
+    } else {
+        try {
+            sampleProject = await trainer.getProject(prevProjectId)
+        } catch (e) {
+            throw new Error('Could not find the project. If you dont have a project ID. you can delete previous projects and create a new one')
+        }
     }
-    console.log("Creating project...");
-    const domains = await trainer.getDomains()
-    console.log('________________________________________DOMAIN', domains)
-    const objDetectDomain = domains.find(domain => domain.type === "ObjectDetection")
-    const sampleProject = await trainer.createProject(trainingProjectName, { domainId: objDetectDomain.id });
-    console.log("Sample project ID: " + sampleProject.id);
-    const shelvesTag = await trainer.createTag(sampleProject.id, "Shelves");
 
+    console.log("Sample project ID: " + sampleProject.id);
+    const customTag = await trainer.createTag(sampleProject.id, tagName);
     let folders = (await readdir(baseFolder, { withFileTypes: true }))
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name)
@@ -55,65 +62,24 @@ async function main({ deletePreviousProject }) {
     console.log(folders)
 
     for (let folder of folders) {
-        let tempAddress = `/home/abhian/work/testframework/data/shelf_training_B_2/${folder}`
+        let tempAddress = `${baseFolder}/${folder}`
         let subfolders = (await readdir(tempAddress, { withFileTypes: true }))
             .filter(dirent => dirent.isDirectory())
             .map(dirent => dirent.name)
         console.log(subfolders)
         for (let subfolder of subfolders) {
-            let sourceFolder = `/home/abhian/work/testframework/data/shelf_training_B_2/${folder}/${subfolder}/output-shelf-images-${folder}-${subfolder}/input-shelf-images-${folder}-${subfolder}/`
+            let sourceFolder = `${baseFolder}/${folder}/${subfolder}/output-shelf-images-${folder}-${subfolder}/input-shelf-images-${folder}-${subfolder}/`
             try {
-                await uploadAllImageFromAFolderWithOnlyImage(sourceFolder, shelvesTag, sampleProject)
+                await uploadAllImageFromAFolderWithOnlyImage(sourceFolder, customTag, sampleProject)
             } catch (e) {
                 console.error(e, 'sourceFolder :: ', sourceFolder)
             }
         }
     }
-
-
-    //Uncomment the following lines if you need to do training and prediction as well
-    /*
-    console.log("Training...");
-    let trainingIteration = await trainer.trainProject(sampleProject.id);
-
-    // Wait for training to complete
-    console.log("Training started...");
-    while (trainingIteration.status == "Training") {
-        try {
-            console.log("Training status: " + trainingIteration.status);
-            // wait for ten seconds
-            await setTimeoutPromise(10000, null);
-            trainingIteration = await trainer.getIteration(sampleProject.id, trainingIteration.id)
-        } catch (e) {
-            await setTimeoutPromise(10000, null);
-            console.log(e, 'Error Again')
-        }
-    }
-    console.log("Training status:::::::::::::::::::: " + trainingIteration.status);
-
-    // Publish the iteration to the end point
-    await trainer.publishIteration(sampleProject.id, trainingIteration.id, publishIterationName, predictionResourceId);
-    // // <snippet_test>
-    const testFile = fs.readFileSync(sampleDataRoot + '4155-wba13826000c001-1600200616942-bottom.jpg');
-    const results = await predictor.detectImage(sampleProject.id, publishIterationName, testFile)
-
-    // Show results
-    console.log("Results:");
-    results.predictions.forEach(predictedResult => {
-        console.log(`\t ${predictedResult.tagName}: ${(predictedResult.probability * 100.0).toFixed(2)}% ${predictedResult.boundingBox.left},${predictedResult.boundingBox.top},${predictedResult.boundingBox.width},${predictedResult.boundingBox.height}`);
-    });
-
-    // console.log("Unpublishing iteration ID: " + trainingIteration.id);
-    // await trainer.unpublishIteration(sampleProject.id, trainingIteration.id);
-    // console.log("Deleting project ID: " + sampleProject.id);
-    // await trainer.deleteProject(sampleProject.id);
-    // </snippet_delete>
-    // <snippet_function_close>
-    */
 }
 
 
-async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, shelvesTag, sampleProject) {
+async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag, sampleProject) {
     let filesArray = fs.readdirSync(sampleDataRoot).filter(file => fs.lstatSync(sampleDataRoot + file).isFile())
     filesArray = filesArray.filter(a => a.split('.')[1] === 'jpg')
     let fileUploadPromises = [];
@@ -141,7 +107,7 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, shelvesTag
                 let right = (region[0].xmax)[0] / size.width[0]
                 let top = (region[0].ymin)[0] / size.width[0]
                 return {
-                    tagId: shelvesTag.id,
+                    tagId: customTag.id,
                     left: +left,
                     top: +top,
                     width: Math.abs(right - left),
@@ -161,4 +127,12 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, shelvesTag
 }
 
 
-main({ deletePreviousProject: true })
+main({
+    deletePreviousProject: true,
+    prevProjectId: null,
+    rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_alcohol',
+    tagName: 'Alcohol'
+})
+
+
+// to unzip everything recursively inside a fodler ---->  find . -iname '*.zip' -exec sh -c 'unzip -o -d "${0%.*}" "$0"' '{}' ';'
