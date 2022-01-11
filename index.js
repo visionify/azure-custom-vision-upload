@@ -28,56 +28,79 @@ const trainer = new TrainingApi.TrainingAPIClient(credentials, trainingEndpoint)
 const predictor_credentials = new msRest.ApiKeyCredentials({ inHeader: { "Prediction-key": predictionKey } });
 const predictor = new PredictionApi.PredictionAPIClient(predictor_credentials, predictionEndpoint);
 
+async function main({ projectIdToDelete, projectId, options }) {
 
-async function uploadTag({ deletePreviousProject, createNewProject, prevProjectId, tagName, rootFolder }) {
-    let sampleProject
-    if (deletePreviousProject) {
+    let currentProject
+    await deleteProject(projectIdToDelete)
+    currentProject = await createNewProject(projectId)
+
+    for (let option of options) {
+        let customTag = await getCustomTag(currentProject.id, option.tagName)
+        if (option.type == 'GEN1') {
+            let folders = await getFoldersFromGen1RootFolder(option.url)
+            console.log(folders)
+            console.log(option.tagName)
+            for (let folder of folders) {
+                await uploadAllImageFromAFolderWithOnlyImage(folder, customTag, currentProject)
+            }
+        } else if (option.type == 'GEN2') {
+            console.log('STILL NEED TO BE CODED FOR GEN2')
+        } else {
+            await uploadAllImageFromAFolderWithOnlyImage(option.url, customTag, currentProject)
+        }
+    }
+}
+
+
+async function getCustomTag(projectId, tagName) {
+    let customTags = await trainer.getTags(projectId)
+    let customTag = customTags.find(t => t.name == tagName)
+    if (customTag) {
+        return await trainer.getTag(projectId, customTag.id)
+    } else {
+        return await trainer.createTag(projectId, tagName);
+    }
+}
+
+async function deleteProject(project) {
+    if (!project)
+        return
+    else if (project === 'ALL') {
         let projects = await trainer.getProjects()
         for (let project of projects) {
-            try {
-                await trainer.deleteProject(project.id)
-            } catch (e) {
-                console.error('error while deleting prev projects :: ', e)
-            }
+            await trainer.deleteProject(project.id)
         }
-
-    }
-
-    if (createNewProject) {
-        console.log("Creating project...");
-        const domains = await trainer.getDomains()
-        // console.log('________________________________________DOMAIN', domains)
-        const objDetectDomain = domains.find(domain => domain.type === "ObjectDetection")
-        sampleProject = await trainer.createProject(trainingProjectName, { domainId: objDetectDomain.id });
     } else {
         try {
-            sampleProject = await trainer.getProject(prevProjectId)
+            await trainer.deleteProject(project.id)
         } catch (e) {
-            console.log(e)
-            throw new Error('Could not find the project. If you dont have a project ID. you can delete previous projects and create a new one')
+            console.error('Unable to delete projectb :: ', project.id)
         }
     }
+}
 
-
-    const baseFolder = rootFolder
-
-
-    // Get tag if exists or create a new tag
-    console.log("Sample project ID: " + sampleProject.id);
-    let customTag
-    let customTags
-    if (prevProjectId)
-        customTags = await trainer.getTags(prevProjectId)
-    else
-        customTag = []
-    customTag = customTags.find(t => t.name == tagName)
-    if (customTag) {
-        customTag = await trainer.getTag(prevProjectId, customTag.id)
+async function createNewProject(projectId) {
+    if (projectId === 'NEW' || !projectId) {
+        const domains = await trainer.getDomains()
+        const objDetectDomain = domains.find(domain => domain.type === "ObjectDetection")
+        let project = await trainer.createProject(trainingProjectName, { domainId: objDetectDomain.id });
+        if (!project) {
+            throw new Error('COULD NOT FIND PROJECT')
+        } else {
+            return project
+        }
     } else {
-        customTag = await trainer.createTag(sampleProject.id, tagName);
+        try {
+            return await trainer.getProject(projectId)
+        } catch (e) {
+            console.error('We could not find the projectId :: ', projectId)
+            throw new Error('COULD NOT FIND PROJECT')
+        }
     }
+}
 
-
+async function getFoldersFromGen1RootFolder(baseFolder) {
+    let result = []
     let folders = (await readdir(baseFolder, { withFileTypes: true }))
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name)
@@ -89,32 +112,40 @@ async function uploadTag({ deletePreviousProject, createNewProject, prevProjectI
             .map(dirent => dirent.name)
         // console.log(subfolders)
         for (let subfolder of subfolders) {
-            let sourceFolder = `${baseFolder}/${folder}/${subfolder}/output-shelf-images-${folder}-${subfolder}/input-shelf-images-${folder}-${subfolder}/`
-            try {
-                await uploadAllImageFromAFolderWithOnlyImage(sourceFolder, customTag, sampleProject)
-            } catch (e) {
-                console.error(e, 'sourceFolder :: ', sourceFolder)
-            }
+            let sourceFolder = `${baseFolder}/${folder}/${subfolder}/output-shelf-images-${folder}-${subfolder}/input-shelf-images-${folder}-${subfolder}`
+            result.push(sourceFolder)
         }
     }
+    return result
 }
 
 
 async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag, sampleProject) {
-    let count = 0
-    let filesArray = fs.readdirSync(sampleDataRoot).filter(file => fs.lstatSync(sampleDataRoot + file).isFile())
+    sampleDataRoot += '/'
+    let erroredFolders = []
+    let erroredFiles = []
+
+    try {
+        var filesArray = fs.readdirSync(sampleDataRoot).filter(file => fs.lstatSync(sampleDataRoot + file).isFile())
+    } catch (e) {
+        erroredFolders.push(sampleDataRoot)
+    }
+
     filesArray = filesArray.filter(a => a.split('.')[1] === 'jpg')
     let entries = []
     for (let file of filesArray) {
         file = file.split('.')[0]
-        var contents = fs.readFileSync(sampleDataRoot + file + '.xml', 'utf8');
+        try {
+            var contents = fs.readFileSync(sampleDataRoot + file + '.xml', 'utf8');
+        } catch (e) {
+            erroredFiles.push(sampleDataRoot + file + '.xml')
+            continue
+        }
         let result = await parser.parseStringPromise(contents)
         let size = result.annotation.size[0]
         result = result.annotation.object
         if (!result) {
-            // console.log('There was some issue with the annotation for :: ', sampleDataRoot + file)
-            // console.log('continuing to the next image')
-            count++;
+            erroredFiles.push(sampleDataRoot + file + '.xml')
             continue
         }
 
@@ -127,7 +158,7 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
                 let left = (region[0].xmin)[0] / size.width[0]
                 let bot = (region[0].ymax)[0] / size.height[0]
                 let right = (region[0].xmax)[0] / size.width[0]
-                let top = (region[0].ymin)[0] / size.width[0]
+                let top = (region[0].ymin)[0] / size.height[0]
                 return {
                     tagId: customTag.id,
                     left: +left,
@@ -145,14 +176,12 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
         const batch = { images: chunk };
         await setTimeoutPromise(1000, null);
         let uploadResult = await trainer.createImagesFromFiles(sampleProject.id, batch)
-        // if (uploadResult.status !== "OK" && uploadResult.status !== "OKDuplicate") {
-        //     batch.images.map(i => {
-        //         console.log(i.regions)
-        //     })
-        // }
-        console.log(uploadResult)
+        if (uploadResult && uploadResult.images) {
+            console.log(uploadResult.images.map(i => i.status))
+        }
     }
-    console.log('Completed upload of all iamges from :: ', sampleDataRoot, 'Total number of images that errored are :: ', count)
+    console.log('Completed upload of all iamges from :: ', sampleDataRoot)
+    return { erroredFolders, erroredFiles }
 }
 
 function splitToBulks(arr, bulkSize = 20) {
@@ -164,50 +193,36 @@ function splitToBulks(arr, bulkSize = 20) {
 }
 
 
-async function main(list) {
-    for (let tag of list) {
-        await uploadTag(tag)
-            .then(d => {
-                console.log('!!!!!!!!!!!!!COMPLETED TAGGING FOR  :: ', tag.tagName, d)
-            })
-            .catch(e => {
-                console.log('!!!!!!!!!!!!! ERROR WHILE UPLAODING TAG :: ', tag.tagName, e)
-            })
-    }
-}
-
-main([
-    // {
-    //     rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
-    //     prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
-    //     tagName: 'Frozenfood'
-    // },
-    {
-        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_alcohol/shelf_training',
-        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
-        tagName: 'Alcohol'
-    },
-    {
-        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
-        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
-        tagName: 'Dairymeat'
-    },
-    {
-        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_beverages1',
-        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
-        tagName: 'Beverages'
-    },
-    {
-        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_icecream/shelf-tagging',
-        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
-        tagName: 'Icecream'
-    },
-])
-
-//rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
-
-
-
-
+main({
+    projectIdToDelete: null,
+    projectId: null,
+    options: [
+        {
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
+            type: 'GEN1',
+            tagName: 'Frozenfood'
+        },
+        {
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_alcohol/shelf_training',
+            type: 'GEN1',
+            tagName: 'Alcohol'
+        },
+        {
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
+            type: 'GEN1',
+            tagName: 'Dairymeat'
+        },
+        {
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_beverages1',
+            type: 'GEN1',
+            tagName: 'Beverage'
+        },
+        {
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_icecream/shelf-tagging',
+            type: 'GEN1',
+            tagName: 'Icecream'
+        },
+    ]
+})
 
 // to unzip everything recursively inside a fodler ---->  find . -iname '*.zip' -exec sh -c 'unzip -o -d "${0%.*}" "$0"' '{}' ';'
