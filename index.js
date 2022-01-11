@@ -166,7 +166,7 @@ function splitToBulks(arr, bulkSize = 20) {
 }
 
 
-function main(list) {
+async function main(list) {
     for (let tag of list) {
         await uploadTag(tag)
             .then(d => {
