@@ -33,7 +33,7 @@ async function main({ projectIdToDelete, projectId, options }) {
     let currentProject
     await deleteProject(projectIdToDelete)
     currentProject = await createNewProject(projectId)
-
+    console.log(currentProject)
     for (let option of options) {
         let customTag = await getCustomTag(currentProject.id, option.tagName)
         if (option.type == 'GEN1') {
