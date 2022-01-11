@@ -143,14 +143,14 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
     let batchChunks = splitToBulks(entries, 64)
     for (let chunk of batchChunks) {
         const batch = { images: chunk };
-        await setTimeoutPromise(10000, null);
+        await setTimeoutPromise(1000, null);
         let uploadResult = await trainer.createImagesFromFiles(sampleProject.id, batch)
-        if (uploadResult.status !== "OK" && uploadResult.status !== "OKDuplicate") {
-            batch.images.map(i => {
-                console.log(i.regions)
-            })
-        }
-        console.log(uploadResult)
+        // if (uploadResult.status !== "OK" && uploadResult.status !== "OKDuplicate") {
+        //     batch.images.map(i => {
+        //         console.log(i.regions)
+        //     })
+        // }
+        // console.log(uploadResult)
     }
     console.log('Completed upload of all iamges from :: ', sampleDataRoot, 'Total number of images that errored are :: ', count)
 }
@@ -177,11 +177,11 @@ async function main(list) {
 }
 
 main([
-    {
-        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
-        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
-        tagName: 'Frozenfood'
-    },
+    // {
+    //     rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
+    //     prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
+    //     tagName: 'Frozenfood'
+    // },
     {
         rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_alcohol/shelf-tagging',
         prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
