@@ -246,7 +246,7 @@ async function uploadAllImageFromAFolderWithOnlyImageGEN2(sampleDataRoot, custom
         const batch = { images: chunk };
         await setTimeoutPromise(1000, null);
         let uploadResult = await trainer.createImagesFromFiles(sampleProject.id, batch)
-        console.log(uploadResult)
+        // console.log(uploadResult)
         if (uploadResult && uploadResult.images) {
             console.log(uploadResult.images.map(i => i.status))
         }
