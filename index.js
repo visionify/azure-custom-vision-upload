@@ -9,8 +9,8 @@ var parser = new xml2json.Parser();
 const readdir = fs.promises.readdir
 const setTimeoutPromise = util.promisify(setTimeout);
 
-let cs_training_key = "24ddfbfed63f4d97abc89a88c3d0798a"
-let cs_training_endpoint = "https://oos-object-detection-beverages.cognitiveservices.azure.com/"
+let cs_training_key = "c11254eb0af647f29aa3c7f4c8c2193e"
+let cs_training_endpoint = "https://oos-shelf-detection.cognitiveservices.azure.com/"
 let my_training_key = "843152cfc1eb45e9aeac3308398b9b67"
 let my_training_endpoint = "https://mltrainingtest.cognitiveservices.azure.com/"
 
@@ -29,7 +29,7 @@ const predictor_credentials = new msRest.ApiKeyCredentials({ inHeader: { "Predic
 const predictor = new PredictionApi.PredictionAPIClient(predictor_credentials, predictionEndpoint);
 
 
-async function main({ deletePreviousProject, createNewProject, prevProjectId, tagName, rootFolder }) {
+async function uploadTag({ deletePreviousProject, createNewProject, prevProjectId, tagName, rootFolder }) {
     let sampleProject
     if (deletePreviousProject) {
         let projects = await trainer.getProjects()
@@ -46,7 +46,7 @@ async function main({ deletePreviousProject, createNewProject, prevProjectId, ta
     if (createNewProject) {
         console.log("Creating project...");
         const domains = await trainer.getDomains()
-        console.log('________________________________________DOMAIN', domains)
+        // console.log('________________________________________DOMAIN', domains)
         const objDetectDomain = domains.find(domain => domain.type === "ObjectDetection")
         sampleProject = await trainer.createProject(trainingProjectName, { domainId: objDetectDomain.id });
     } else {
@@ -65,7 +65,11 @@ async function main({ deletePreviousProject, createNewProject, prevProjectId, ta
     // Get tag if exists or create a new tag
     console.log("Sample project ID: " + sampleProject.id);
     let customTag
-    const customTags = await trainer.getTags(prevProjectId)
+    let customTags
+    if (prevProjectId)
+        customTags = await trainer.getTags(prevProjectId)
+    else
+        customTag = []
     customTag = customTags.find(t => t.name == tagName)
     if (customTag) {
         customTag = await trainer.getTag(prevProjectId, customTag.id)
@@ -83,7 +87,7 @@ async function main({ deletePreviousProject, createNewProject, prevProjectId, ta
         let subfolders = (await readdir(tempAddress, { withFileTypes: true }))
             .filter(dirent => dirent.isDirectory())
             .map(dirent => dirent.name)
-        console.log(subfolders)
+        // console.log(subfolders)
         for (let subfolder of subfolders) {
             let sourceFolder = `${baseFolder}/${folder}/${subfolder}/output-shelf-images-${folder}-${subfolder}/input-shelf-images-${folder}-${subfolder}/`
             try {
@@ -97,6 +101,7 @@ async function main({ deletePreviousProject, createNewProject, prevProjectId, ta
 
 
 async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag, sampleProject) {
+    let count = 0
     let filesArray = fs.readdirSync(sampleDataRoot).filter(file => fs.lstatSync(sampleDataRoot + file).isFile())
     filesArray = filesArray.filter(a => a.split('.')[1] === 'jpg')
     // let fileUploadPromises = [];
@@ -108,8 +113,9 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
         let size = result.annotation.size[0]
         result = result.annotation.object
         if (!result) {
-            console.log('There was some issue with the annotation for :: ', sampleDataRoot + file)
-            console.log('continuing to the next image')
+            // console.log('There was some issue with the annotation for :: ', sampleDataRoot + file)
+            // console.log('continuing to the next image')
+            count++;
             continue
         }
 
@@ -141,14 +147,14 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
         await setTimeoutPromise(10000, null);
         let uploadResult = await trainer.createImagesFromFiles(sampleProject.id, batch)
         await Promise.all(fileUploadPromises);
-        if (uploadResult.status !== "OK" && uploadResult.status !=="OKDuplicate") {
-            batch.images.map(i=>{
+        if (uploadResult.status !== "OK" && uploadResult.status !== "OKDuplicate") {
+            batch.images.map(i => {
                 console.log(i.regions)
             })
         }
         console.log(uploadResult)
     }
-    console.log('Completed upload of all iamges from :: ', sampleDataRoot)
+    console.log('Completed upload of all iamges from :: ', sampleDataRoot, 'Total number of images that errored are :: ', count)
 }
 
 function splitToBulks(arr, bulkSize = 20) {
@@ -159,14 +165,46 @@ function splitToBulks(arr, bulkSize = 20) {
     return bulks;
 }
 
-main({
-    // deletePreviousProject: false,
-    // prevProjectId: 'a63788ca-6fb1-4920-8de6-2cf54e563c5a',
-    // deletePreviousProject: true,
-    rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
-    createNewProject: true,
-    tagName: 'Frozenfood'
-})
+
+function main(list) {
+    for (let tag of list) {
+        await uploadTag(tag)
+            .then(d => {
+                console.log('!!!!!!!!!!!!!COMPLETED TAGGING FOR  :: ', tag.tagName)
+            })
+            .catch(e => {
+                console.log('!!!!!!!!!!!!! ERROR WHILE UPLAODING TAG :: ', tag.tagName)
+            })
+    }
+}
+
+main([
+    {
+        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
+        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
+        tagName: 'Frozenfood'
+    },
+    {
+        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_alcohol/shelf-tagging',
+        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
+        tagName: 'Alcohol'
+    },
+    {
+        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_dairymeat',
+        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
+        tagName: 'Dairymeat'
+    },
+    {
+        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_beverages1',
+        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
+        tagName: 'Beverages'
+    },
+    {
+        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_icecream/shelf-tagging',
+        prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
+        tagName: 'Icecream'
+    },
+])
 
 //rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
 
