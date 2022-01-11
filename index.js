@@ -183,22 +183,22 @@ main([
     //     tagName: 'Frozenfood'
     // },
     {
-        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_alcohol/shelf_training',
+        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_alcohol/shelf_training',
         prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
         tagName: 'Alcohol'
     },
     {
-        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_dairymeat',
+        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
         prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
         tagName: 'Dairymeat'
     },
     {
-        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_beverages1',
+        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_beverages1',
         prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
         tagName: 'Beverages'
     },
     {
-        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_icecream/shelf-tagging',
+        rootFolder: '/data/tao_samples/shelf-images-dataset-copy/gen1_icecream/shelf-tagging',
         prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
         tagName: 'Icecream'
     },
