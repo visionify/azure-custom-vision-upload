@@ -195,7 +195,7 @@ function splitToBulks(arr, bulkSize = 20) {
 
 main({
     projectIdToDelete: null,
-    projectId: null,
+    projectId: '77e8bb89-d1d4-477f-a6a6-a99604e505d8',
     options: [
         {
             url: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
