@@ -168,10 +168,10 @@ async function main(list) {
     for (let tag of list) {
         await uploadTag(tag)
             .then(d => {
-                console.log('!!!!!!!!!!!!!COMPLETED TAGGING FOR  :: ', tag.tagName)
+                console.log('!!!!!!!!!!!!!COMPLETED TAGGING FOR  :: ', tag.tagName, e)
             })
             .catch(e => {
-                console.log('!!!!!!!!!!!!! ERROR WHILE UPLAODING TAG :: ', tag.tagName)
+                console.log('!!!!!!!!!!!!! ERROR WHILE UPLAODING TAG :: ', tag.tagName, e)
             })
     }
 }
@@ -183,7 +183,7 @@ main([
     //     tagName: 'Frozenfood'
     // },
     {
-        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_alcohol/shelf-tagging',
+        rootFolder: '/data/tao_samples/shelf-images-dataset/gen1_alcohol/shelf_training',
         prevProjectId: '7655074c-8217-4937-94a4-4e4a063bcd58',
         tagName: 'Alcohol'
     },
