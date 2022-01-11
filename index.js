@@ -130,7 +130,7 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
     } catch (e) {
         erroredFolders.push(sampleDataRoot)
     }
-
+    filesArray = filesArray || []
     filesArray = filesArray.filter(a => a.split('.')[1] === 'jpg')
     let entries = []
     for (let file of filesArray) {
