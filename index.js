@@ -265,7 +265,7 @@ function splitToBulks(arr, bulkSize = 20) {
 
 main({
     projectIdToDelete: null,
-    projectId: "e2338beb-c6e6-4add-9191-54e767963a43",
+    projectId: null,
     options: [
         {
             url: '/data/tao_samples/shelf-images-dataset-copy/gen2_alcohol',
