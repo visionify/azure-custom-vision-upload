@@ -104,7 +104,6 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
     let count = 0
     let filesArray = fs.readdirSync(sampleDataRoot).filter(file => fs.lstatSync(sampleDataRoot + file).isFile())
     filesArray = filesArray.filter(a => a.split('.')[1] === 'jpg')
-    // let fileUploadPromises = [];
     let entries = []
     for (let file of filesArray) {
         file = file.split('.')[0]
@@ -146,7 +145,6 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
         const batch = { images: chunk };
         await setTimeoutPromise(10000, null);
         let uploadResult = await trainer.createImagesFromFiles(sampleProject.id, batch)
-        await Promise.all(fileUploadPromises);
         if (uploadResult.status !== "OK" && uploadResult.status !== "OKDuplicate") {
             batch.images.map(i => {
                 console.log(i.regions)
