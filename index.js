@@ -45,6 +45,7 @@ async function main({ projectIdToDelete, projectId, options }) {
             }
         } else if (option.type == 'GEN2') {
             console.log('STILL NEED TO BE CODED FOR GEN2')
+            await uploadAllImageFromAFolderWithOnlyImageGEN2(option.url, customTag, currentProject)
         } else {
             await uploadAllImageFromAFolderWithOnlyImage(option.url, customTag, currentProject)
         }
@@ -184,6 +185,76 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
     return { erroredFolders, erroredFiles }
 }
 
+async function uploadAllImageFromAFolderWithOnlyImageGEN2(sampleDataRoot, customTag, sampleProject) {
+    imageFile = sampleDataRoot + '/JPEGImages/'
+    annotationFile = sampleDataRoot + '/Annotations/'
+    let erroredFolders = []
+    let erroredFiles = []
+
+    try {
+        console.log(imageFile)
+        var filesArray = fs.readdirSync(imageFile)
+        filesArray = filesArray.filter(file => fs.lstatSync(imageFile + file).isFile())
+    } catch (e) {
+        console.log(e)
+        erroredFolders.push(imageFile)
+    }
+    filesArray = filesArray || []
+    filesArray = filesArray.filter(a => a.split('.')[1] === 'jpg')
+    let entries = []
+    for (let file of filesArray) {
+        file = file.split('.')[0]
+        try {
+            var contents = fs.readFileSync(annotationFile + file + '.xml', 'utf8');
+        } catch (e) {
+            erroredFiles.push(imageFile + file + '.xml')
+            console.log('EEEEEEERRRRRRRRRRRRRRRRRRRRRRRRROOOOOOOOOOOOORRRRRRRRRRRRRR', e)
+            continue
+        }
+        let result = await parser.parseStringPromise(contents)
+        let size = result.annotation.size[0]
+        result = result.annotation.object
+        if (!result) {
+            erroredFiles.push(imageFile + file + '.xml')
+            continue
+        }
+
+        const img_contents = fs.readFileSync(`${imageFile}${file}.jpg`);
+        const entry = {
+            name: file,
+            contents: img_contents,
+            regions: result.map(i => {
+                let region = i.bndbox
+                let left = (region[0].xmin)[0] / size.width[0]
+                let bot = (region[0].ymax)[0] / size.height[0]
+                let right = (region[0].xmax)[0] / size.width[0]
+                let top = (region[0].ymin)[0] / size.height[0]
+                return {
+                    tagId: customTag.id,
+                    left: +left,
+                    top: +top,
+                    width: Math.abs(right - left),
+                    height: Math.abs(top - bot),
+                }
+
+            })
+        }
+        entries.push(entry)
+    }
+    let batchChunks = splitToBulks(entries, 64)
+    for (let chunk of batchChunks) {
+        const batch = { images: chunk };
+        await setTimeoutPromise(1000, null);
+        let uploadResult = await trainer.createImagesFromFiles(sampleProject.id, batch)
+        console.log(uploadResult)
+        if (uploadResult && uploadResult.images) {
+            console.log(uploadResult.images.map(i => i.status))
+        }
+    }
+    console.log('Completed upload of all iamges from :: ', sampleDataRoot)
+    return { erroredFolders, erroredFiles }
+}
+
 function splitToBulks(arr, bulkSize = 20) {
     const bulks = [];
     for (let i = 0; i < Math.ceil(arr.length / bulkSize); i++) {
@@ -192,37 +263,74 @@ function splitToBulks(arr, bulkSize = 20) {
     return bulks;
 }
 
-
 main({
     projectIdToDelete: null,
-    projectId: '77e8bb89-d1d4-477f-a6a6-a99604e505d8',
+    projectId: "e2338beb-c6e6-4add-9191-54e767963a43",
     options: [
         {
-            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
-            type: 'GEN1',
-            tagName: 'Frozenfood'
-        },
-        {
-            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_alcohol/shelf_training',
-            type: 'GEN1',
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen2_alcohol',
+            type: 'GEN2',
             tagName: 'Alcohol'
         },
         {
-            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
-            type: 'GEN1',
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen2_frozenfood',
+            type: 'GEN2',
+            tagName: 'Frozenfood'
+        },
+        {
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen2_dairymeat',
+            type: 'GEN2',
             tagName: 'Dairymeat'
         },
         {
-            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_beverages1',
-            type: 'GEN1',
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen2_beverages',
+            type: 'GEN2',
             tagName: 'Beverage'
         },
         {
-            url: '/data/tao_samples/shelf-images-dataset-copy/gen1_icecream/shelf-tagging',
-            type: 'GEN1',
+            url: '/data/tao_samples/shelf-images-dataset-copy/gen2_icecream',
+            type: 'GEN2',
             tagName: 'Icecream'
         },
     ]
 })
+
+
+// main({
+//     projectIdToDelete: null,
+//     projectId: '77e8bb89-d1d4-477f-a6a6-a99604e505d8',
+//     options: [
+//         {
+//             url: '/data/tao_samples/shelf-images-dataset-copy/gen1_frozenfood/shelf-tagging',
+//             type: 'GEN1',
+//             tagName: 'Frozenfood'
+//         },
+//         {
+//             url: '/data/tao_samples/shelf-images-dataset-copy/gen1_alcohol/shelf_training',
+//             type: 'GEN1',
+//             tagName: 'Alcohol'
+//         },
+//         {
+//             url: '/data/tao_samples/shelf-images-dataset-copy/gen1_dairymeat',
+//             type: 'GEN1',
+//             tagName: 'Dairymeat'
+//         },
+//         {
+//             url: '/data/tao_samples/shelf-images-dataset-copy/gen1_beverages1',
+//             type: 'GEN1',
+//             tagName: 'Beverage'
+//         },
+//         {
+//             url: '/data/tao_samples/shelf-images-dataset-copy/gen1_icecream/shelf-tagging',
+//             type: 'GEN1',
+//             tagName: 'Icecream'
+//         },
+//     ]
+// })
+
+
+
+
+// /home/abhian/Downloads/alcohol_shelf_detection
 
 // to unzip everything recursively inside a fodler ---->  find . -iname '*.zip' -exec sh -c 'unzip -o -d "${0%.*}" "$0"' '{}' ';'
