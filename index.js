@@ -20,7 +20,7 @@ const trainingEndpoint = cs_training_endpoint;
 const predictionKey = "24ddfbfed63f4d97abc89a88c3d0798a"; //
 const predictionResourceId = "/subscriptions/14ef0c4c-a76e-442f-bfa9-d986d43b5f25/resourceGroups/ml-training/providers/Microsoft.CognitiveServices/accounts/mltrainingtest-Prediction";
 const predictionEndpoint = "https://mltrainingtest-prediction.cognitiveservices.azure.com/";
-const trainingProjectName = 'Shelf Detection - Gen1'
+const trainingProjectName = 'Shelf Detection - Gen1 - revised'
 const publishIterationName = "detectModel";
 
 const credentials = new msRest.ApiKeyCredentials({ inHeader: { "Training-key": trainingKey } });
