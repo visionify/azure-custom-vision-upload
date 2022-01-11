@@ -150,7 +150,7 @@ async function uploadAllImageFromAFolderWithOnlyImage(sampleDataRoot, customTag,
         //         console.log(i.regions)
         //     })
         // }
-        // console.log(uploadResult)
+        console.log(uploadResult)
     }
     console.log('Completed upload of all iamges from :: ', sampleDataRoot, 'Total number of images that errored are :: ', count)
 }
@@ -168,7 +168,7 @@ async function main(list) {
     for (let tag of list) {
         await uploadTag(tag)
             .then(d => {
-                console.log('!!!!!!!!!!!!!COMPLETED TAGGING FOR  :: ', tag.tagName, e)
+                console.log('!!!!!!!!!!!!!COMPLETED TAGGING FOR  :: ', tag.tagName, d)
             })
             .catch(e => {
                 console.log('!!!!!!!!!!!!! ERROR WHILE UPLAODING TAG :: ', tag.tagName, e)
